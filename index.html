@@ -36,7 +36,7 @@
         };
 
         // --- CONFIGURACIÓN ESTRATÉGICA ---
-        const apiKey = "AIzaSyCCp-ftyltZkgsajxDt1-gQ2IF5VCyA2p8"; 
+        const DEFAULT_API_KEY = "AIzaSyCCp-ftyltZkgsajxDt1-gQ2IF5VCyA2p8"; 
         const MODEL_ID = "gemini-2.5-flash-preview-09-2025";
         const COOLDOWN_TIME = 60 * 60 * 1000; // 1 Hora de espera
         const CONTACT_NUMBER = "672680535";
@@ -57,20 +57,26 @@
             const [timeLeft, setTimeLeft] = useState(0);
             const [showContact, setShowContact] = useState(false);
             const [error, setError] = useState(null);
+            
+            // Configuración de API Key personalizada
+            const [customKey, setCustomKey] = useState("");
+            const [showSettings, setShowSettings] = useState(false);
 
             useEffect(() => {
                 const savedCredits = localStorage.getItem('chatops_credits_v7');
                 const savedTime = localStorage.getItem('chatops_cooldown_v7');
+                const savedKey = localStorage.getItem('chatops_custom_key');
                 
                 if (savedCredits !== null) setFreeUses(parseInt(savedCredits));
                 if (savedTime !== null) setLastUseTimestamp(parseInt(savedTime));
+                if (savedKey) setCustomKey(savedKey);
                 
                 if (window.lucide) window.lucide.createIcons();
             }, []);
 
             useEffect(() => {
                 if (window.lucide) window.lucide.createIcons();
-            }, [result, isAnalyzing, showContact, timeLeft]);
+            }, [result, isAnalyzing, showContact, timeLeft, showSettings]);
 
             useEffect(() => {
                 if (freeUses <= 0 && lastUseTimestamp) {
@@ -78,9 +84,9 @@
                         const now = Date.now();
                         const diff = (lastUseTimestamp + COOLDOWN_TIME) - now;
                         if (diff <= 0) {
-                            setFreeUses(1); 
+                            setFreeUses(3);
                             setTimeLeft(0);
-                            localStorage.setItem('chatops_credits_v7', "1");
+                            localStorage.setItem('chatops_credits_v7', "3");
                             clearInterval(interval);
                         } else {
                             setTimeLeft(diff);
@@ -90,11 +96,14 @@
                 }
             }, [freeUses, lastUseTimestamp]);
 
-            const fetchWithRetry = async (url, options, retries = 3, backoff = 1000) => {
+            const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
                 try {
                     const response = await fetch(url, options);
                     if (!response.ok) {
                         const errorData = await response.json();
+                        if (response.status === 429) {
+                            throw new Error("Límite de tráfico de Google alcanzado. Si tienes una clave PRO, introdúcela en Ajustes ⚙️.");
+                        }
                         throw new Error(errorData.error?.message || `HTTP ${response.status}`);
                     }
                     return await response.json();
@@ -106,9 +115,10 @@
             };
 
             const callAI = async (text, ctx) => {
+                const activeKey = customKey || DEFAULT_API_KEY;
                 const systemPrompt = `Eres un Motor de Decisión Social Senior de la marca ${BRAND_NAME}. Analiza chats y da un diagnóstico táctico frío, asertivo y directo. Prohibido usar "quizás", "depende" o lenguaje terapéutico. Contexto: ${ctx}. Salida JSON estricta: { "intention": "frase corta", "interest": 0-100, "risk": "Bajo/Medio/Alto", "action": "acción concreta", "recommendedMsg": "mensaje listo para enviar" }`;
                 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${activeKey}`;
                 
                 const payload = {
                     contents: [{ parts: [{ text: `Analiza este hilo de mensajes: "${text}"` }] }],
@@ -129,7 +139,6 @@
 
             const handleAnalyze = async () => {
                 if (chatInput.trim().length < 10) return;
-                
                 if (freeUses <= 0) {
                     setShowContact(true);
                     return;
@@ -153,10 +162,16 @@
                     localStorage.setItem('chatops_credits_v7', newUses.toString());
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } catch (e) {
-                    setError(`FALLO EN EL ENLACE: ${e.message}`);
+                    setError(`ESTADO: ${e.message}`);
                 } finally {
                     setIsAnalyzing(false);
                 }
+            };
+
+            const saveCustomKey = (key) => {
+                setCustomKey(key);
+                localStorage.setItem('chatops_custom_key', key);
+                setShowSettings(false);
             };
 
             const formatTime = (ms) => {
@@ -166,9 +181,8 @@
             };
 
             const handleContact = () => {
-                // He añadido un fragmento del chat para que el consultor tenga contexto inmediato
                 const chatSnippet = chatInput ? `\n\nCaso a analizar:\n"${chatInput.substring(0, 150)}..."` : "";
-                const msg = `Hola Antonio, solicito un análisis táctico profundo. El sistema automático ChatOps ha agotado su capacidad.${chatSnippet}`;
+                const msg = `Hola Antonio, solicito un análisis táctico profundo. El sistema automático ChatOps ha agotado su capacidad de procesamiento.${chatSnippet}`;
                 window.open(`https://wa.me/34${CONTACT_NUMBER}?text=${encodeURIComponent(msg)}`);
             };
 
@@ -184,9 +198,19 @@
                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{BRAND_NAME}</span>
                             </div>
                         </div>
-                        <div className="bg-slate-900 px-3 py-1 rounded-full border border-slate-800 flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Active</span>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={() => setShowSettings(true)}
+                                className="text-slate-500 hover:text-white transition-colors"
+                            >
+                                <Icon name="settings" size={20} />
+                            </button>
+                            <div className="bg-slate-900 px-3 py-1 rounded-full border border-slate-800 flex items-center gap-2">
+                                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${customKey ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {customKey ? 'PRO' : 'System'}
+                                </span>
+                            </div>
                         </div>
                     </header>
 
@@ -238,9 +262,9 @@
                                             )}
                                         </button>
 
-                                        <div className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-900 text-center shadow-inner">
+                                        <div className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-900 text-center shadow-inner text-white">
                                             {freeUses > 0 ? (
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">
                                                     Análisis disponibles: <span className="text-red-500">{freeUses}</span>
                                                 </p>
                                             ) : timeLeft > 0 ? (
@@ -257,7 +281,7 @@
                                     </div>
                                     {error && (
                                         <div className="bg-red-950/20 border border-red-900/30 p-4 rounded-2xl">
-                                            <p className="text-red-600 text-[10px] font-bold uppercase text-center">{error}</p>
+                                            <p className="text-red-600 text-[10px] font-bold uppercase text-center leading-tight">{error}</p>
                                         </div>
                                     )}
                                 </motion.div>
@@ -283,7 +307,7 @@
                                         </div>
                                     </div>
 
-                                    <div className="bg-slate-900 p-7 rounded-[2rem] border border-slate-800 shadow-lg">
+                                    <div className="bg-slate-900 p-7 rounded-[2rem] border border-slate-800 shadow-lg text-white">
                                         <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest block mb-3">Qué hacer ahora</span>
                                         <p className="font-bold italic text-slate-100 leading-relaxed text-lg">"{result.action}"</p>
                                     </div>
@@ -315,16 +339,62 @@
                                                 <Icon name="phone" size={14} /> Contactar Operador H50
                                             </button>
                                         </div>
-                                        <div className="space-y-4 w-full opacity-20 filter blur-sm">
-                                             <div className="h-4 bg-slate-700 w-full rounded"></div>
-                                             <div className="h-4 bg-slate-700 w-3/4 rounded"></div>
-                                             <div className="h-4 bg-slate-700 w-1/2 rounded"></div>
-                                        </div>
                                     </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </main>
+
+                    {/* MODAL DE AJUSTES (API KEY PERSONALIZADA) */}
+                    <AnimatePresence>
+                        {showSettings && (
+                            <motion.div 
+                                initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+                                className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-8"
+                            >
+                                <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 space-y-6 w-full max-w-sm shadow-2xl">
+                                    <div className="text-center">
+                                        <Icon name="settings" size={40} className="text-slate-500 mb-4" />
+                                        <h3 className="text-xl font-black uppercase tracking-tighter text-white">Configuración PRO</h3>
+                                        <p className="text-slate-400 text-[10px] font-bold uppercase mt-2 leading-relaxed">
+                                            Si tienes una clave de API de Gemini (pago o gratuita), introdúcela aquí para evitar los límites de tráfico compartidos.
+                                        </p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <input 
+                                            type="password"
+                                            placeholder="Introduce tu API Key..."
+                                            value={customKey}
+                                            onChange={(e) => setCustomKey(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-white outline-none"
+                                        />
+                                        <button 
+                                            onClick={() => saveCustomKey(customKey)}
+                                            className="w-full py-4 bg-white text-black rounded-2xl font-black uppercase text-xs tracking-widest"
+                                        >
+                                            Guardar Configuración
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setCustomKey("");
+                                                localStorage.removeItem('chatops_custom_key');
+                                                setShowSettings(false);
+                                            }}
+                                            className="w-full text-slate-600 text-[9px] font-black uppercase"
+                                        >
+                                            Restablecer valores
+                                        </button>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowSettings(false)}
+                                        className="text-slate-500 text-[10px] uppercase font-bold block mx-auto pt-4"
+                                    >
+                                        Volver
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     {/* MODAL DE CONTACTO / LÍMITE */}
                     <AnimatePresence>
