@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatOps • Tactical Intelligence Engine</title>
-    <!-- Dependencias: React, Tailwind, Framer Motion y Lucide -->
+    <!-- Dependencias críticas -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,11 +16,10 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .red-glow { box-shadow: 0 0 20px rgba(220, 38, 38, 0.2); }
         textarea::placeholder { color: #334155; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .blur-text { filter: blur(4px); pointer-events: none; user-select: none; }
         input:focus, textarea:focus { border-color: #dc2626 !important; }
+        .btn-glow:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
@@ -36,9 +35,10 @@
         };
 
         // --- CONFIGURACIÓN ESTRATÉGICA ---
-        const DEFAULT_API_KEY = "AIzaSyCCp-ftyltZkgsajxDt1-gQ2IF5VCyA2p8"; 
+        // Clave actualizada por el usuario
+        const apiKey = "AIzaSyBdnRUoqB2sRshy750f0aMqIQSVc5O16vU"; 
         const MODEL_ID = "gemini-2.5-flash-preview-09-2025";
-        const COOLDOWN_TIME = 60 * 60 * 1000; // 1 Hora de espera
+        const COOLDOWN_TIME = 60 * 60 * 1000; // 1 Hora
         const CONTACT_NUMBER = "672680535";
         const BRAND_NAME = "Preemptive Movement";
 
@@ -57,97 +57,98 @@
             const [timeLeft, setTimeLeft] = useState(0);
             const [showContact, setShowContact] = useState(false);
             const [error, setError] = useState(null);
-            
-            // Configuración de API Key personalizada
-            const [customKey, setCustomKey] = useState("");
-            const [showSettings, setShowSettings] = useState(false);
 
+            // Carga de estado inicial
             useEffect(() => {
-                const savedCredits = localStorage.getItem('chatops_credits_v7');
-                const savedTime = localStorage.getItem('chatops_cooldown_v7');
-                const savedKey = localStorage.getItem('chatops_custom_key');
+                const savedCredits = localStorage.getItem('chatops_v8_credits');
+                const savedTime = localStorage.getItem('chatops_v8_time');
                 
-                if (savedCredits !== null) setFreeUses(parseInt(savedCredits));
-                if (savedTime !== null) setLastUseTimestamp(parseInt(savedTime));
-                if (savedKey) setCustomKey(savedKey);
+                if (savedCredits !== null) {
+                    setFreeUses(parseInt(savedCredits));
+                }
+                if (savedTime !== null) {
+                    const ts = parseInt(savedTime);
+                    setLastUseTimestamp(ts);
+                    const now = Date.now();
+                    if (now > ts + COOLDOWN_TIME) {
+                        setFreeUses(3);
+                        localStorage.setItem('chatops_v8_credits', "3");
+                    }
+                }
                 
                 if (window.lucide) window.lucide.createIcons();
             }, []);
 
             useEffect(() => {
                 if (window.lucide) window.lucide.createIcons();
-            }, [result, isAnalyzing, showContact, timeLeft, showSettings]);
+            }, [result, isAnalyzing, showContact, timeLeft, error]);
 
+            // Lógica del Temporizador
             useEffect(() => {
+                let interval;
                 if (freeUses <= 0 && lastUseTimestamp) {
-                    const interval = setInterval(() => {
+                    interval = setInterval(() => {
                         const now = Date.now();
                         const diff = (lastUseTimestamp + COOLDOWN_TIME) - now;
                         if (diff <= 0) {
                             setFreeUses(3);
                             setTimeLeft(0);
-                            localStorage.setItem('chatops_credits_v7', "3");
+                            localStorage.setItem('chatops_v8_credits', "3");
                             clearInterval(interval);
                         } else {
                             setTimeLeft(diff);
                         }
                     }, 1000);
-                    return () => clearInterval(interval);
                 }
+                return () => clearInterval(interval);
             }, [freeUses, lastUseTimestamp]);
 
-            const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
+            const fetchAI = async (text, ctx) => {
+                const systemPrompt = `Eres un Motor de Decisión Social Senior de ${BRAND_NAME}. Analiza chats y da diagnósticos tácticos fríos y asertivos. PROHIBIDO usar lenguaje vago o terapéutico. Contexto: ${ctx}. Salida JSON: { "intention": "...", "interest": 0-100, "risk": "Bajo/Medio/Alto", "action": "...", "recommendedMsg": "..." }`;
+                
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`;
+                
                 try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        if (response.status === 429) {
-                            throw new Error("Límite de tráfico de Google alcanzado. Si tienes una clave PRO, introdúcela en Ajustes ⚙️.");
-                        }
-                        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+                    const response = await fetch(url, { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: `Analiza: "${text}"` }] }],
+                            systemInstruction: { parts: [{ text: systemPrompt }] },
+                            generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
+                        })
+                    });
+
+                    if (response.status === 429) {
+                        throw new Error("SISTEMA SATURADO: Google ha limitado temporalmente el tráfico. Esto sucede cuando la cuota de la clave API es excedida.");
                     }
-                    return await response.json();
-                } catch (error) {
-                    if (retries <= 0) throw error;
-                    await new Promise(resolve => setTimeout(resolve, backoff));
-                    return fetchWithRetry(url, options, retries - 1, backoff * 2);
+                    
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error?.message || "Error en la conexión con el motor táctico.");
+                    }
+
+                    const data = await response.json();
+                    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    return JSON.parse(content);
+                } catch (e) {
+                    throw e;
                 }
-            };
-
-            const callAI = async (text, ctx) => {
-                const activeKey = customKey || DEFAULT_API_KEY;
-                const systemPrompt = `Eres un Motor de Decisión Social Senior de la marca ${BRAND_NAME}. Analiza chats y da un diagnóstico táctico frío, asertivo y directo. Prohibido usar "quizás", "depende" o lenguaje terapéutico. Contexto: ${ctx}. Salida JSON estricta: { "intention": "frase corta", "interest": 0-100, "risk": "Bajo/Medio/Alto", "action": "acción concreta", "recommendedMsg": "mensaje listo para enviar" }`;
-                
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${activeKey}`;
-                
-                const payload = {
-                    contents: [{ parts: [{ text: `Analiza este hilo de mensajes: "${text}"` }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
-                };
-
-                const data = await fetchWithRetry(url, { 
-                    method: 'POST', 
-                    body: JSON.stringify(payload), 
-                    headers: {'Content-Type': 'application/json'} 
-                });
-
-                const rawResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!rawResponse) throw new Error("IA no devolvió datos");
-                return JSON.parse(rawResponse);
             };
 
             const handleAnalyze = async () => {
                 if (chatInput.trim().length < 10) return;
-                if (freeUses <= 0) {
+                
+                if (freeUses <= 0 && timeLeft > 0) {
                     setShowContact(true);
                     return;
                 }
                 
                 setIsAnalyzing(true);
                 setError(null);
+
                 try {
-                    const diagnosis = await callAI(chatInput, context);
+                    const diagnosis = await fetchAI(chatInput, context);
                     setResult(diagnosis);
                     
                     const newUses = freeUses - 1;
@@ -156,33 +157,26 @@
                     if (newUses === 0) {
                         const now = Date.now();
                         setLastUseTimestamp(now);
-                        localStorage.setItem('chatops_cooldown_v7', now.toString());
+                        localStorage.setItem('chatops_v8_time', now.toString());
                     }
-                    
-                    localStorage.setItem('chatops_credits_v7', newUses.toString());
+                    localStorage.setItem('chatops_v8_credits', newUses.toString());
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } catch (e) {
-                    setError(`ESTADO: ${e.message}`);
+                    setError(e.message);
                 } finally {
                     setIsAnalyzing(false);
                 }
             };
 
-            const saveCustomKey = (key) => {
-                setCustomKey(key);
-                localStorage.setItem('chatops_custom_key', key);
-                setShowSettings(false);
-            };
-
             const formatTime = (ms) => {
-                const minutes = Math.floor(ms / 60000);
-                const seconds = Math.floor((ms % 60000) / 1000);
-                return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                const min = Math.floor(ms / 60000);
+                const sec = Math.floor((ms % 60000) / 1000);
+                return `${min}:${sec < 10 ? '0' : ''}${sec}`;
             };
 
             const handleContact = () => {
-                const chatSnippet = chatInput ? `\n\nCaso a analizar:\n"${chatInput.substring(0, 150)}..."` : "";
-                const msg = `Hola Antonio, solicito un análisis táctico profundo. El sistema automático ChatOps ha agotado su capacidad de procesamiento.${chatSnippet}`;
+                const snippet = chatInput ? `\n\nCaso:\n"${chatInput.substring(0, 150)}..."` : "";
+                const msg = `Hola Antonio, solicito un análisis táctico profundo. El sistema automático ha alcanzado su capacidad.${snippet}`;
                 window.open(`https://wa.me/34${CONTACT_NUMBER}?text=${encodeURIComponent(msg)}`);
             };
 
@@ -194,23 +188,13 @@
                                 <Icon name="zap" className="text-white fill-current" />
                             </div>
                             <div>
-                                <h1 className="font-black text-2xl tracking-tighter italic uppercase leading-none text-white">ChatOps</h1>
+                                <h1 className="font-black text-2xl tracking-tighter italic uppercase leading-none text-white text-white">ChatOps</h1>
                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{BRAND_NAME}</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <button 
-                                onClick={() => setShowSettings(true)}
-                                className="text-slate-500 hover:text-white transition-colors"
-                            >
-                                <Icon name="settings" size={20} />
-                            </button>
-                            <div className="bg-slate-900 px-3 py-1 rounded-full border border-slate-800 flex items-center gap-2">
-                                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${customKey ? 'bg-green-500' : 'bg-blue-500'}`} />
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    {customKey ? 'PRO' : 'System'}
-                                </span>
-                            </div>
+                        <div className="bg-slate-900 px-3 py-1 rounded-full border border-slate-800 flex items-center gap-2">
+                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-white">System Active</span>
                         </div>
                     </header>
 
@@ -219,11 +203,11 @@
                             {!result ? (
                                 <motion.div key="input" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="space-y-8">
                                     <div className="space-y-2">
-                                        <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none tracking-tight text-white">Descifra la intención.</h2>
-                                        <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.2em]">Diagnóstico social de alta criticidad.</p>
+                                        <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none text-white">Descifra la intención.</h2>
+                                        <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.2em]">Diagnóstico social sin filtros.</p>
                                     </div>
 
-                                    <div className="relative group">
+                                    <div className="relative">
                                         <textarea 
                                             value={chatInput}
                                             onChange={(e) => setChatInput(e.target.value)}
@@ -233,15 +217,12 @@
                                     </div>
 
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2 ml-2 tracking-widest">
-                                            <Icon name="target" size={12} /> Contexto Operativo
-                                        </label>
                                         <div className="flex flex-wrap gap-2">
                                             {['pareja', 'cita', 'trabajo', 'negociación'].map(c => (
                                                 <button 
                                                     key={c} 
                                                     onClick={() => setContext(c)}
-                                                    className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${context === c ? 'bg-white text-black border-white scale-105 shadow-xl shadow-white/5' : 'border-slate-800 text-slate-500 hover:border-slate-600'}`}
+                                                    className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${context === c ? 'bg-white text-black border-white shadow-xl shadow-white/5' : 'border-slate-800 text-slate-500 hover:border-slate-600'}`}
                                                 >
                                                     {c}
                                                 </button>
@@ -262,17 +243,17 @@
                                             )}
                                         </button>
 
-                                        <div className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-900 text-center shadow-inner text-white">
+                                        <div className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-900 text-center shadow-inner">
                                             {freeUses > 0 ? (
-                                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">
-                                                    Análisis disponibles: <span className="text-red-500">{freeUses}</span>
+                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                                                    Análisis disponibles: <span className="text-red-500 font-black">{freeUses}</span>
                                                 </p>
                                             ) : timeLeft > 0 ? (
                                                 <div className="flex flex-col items-center gap-1.5">
                                                     <p className="text-[10px] font-black text-yellow-500 uppercase tracking-[0.2em] flex items-center gap-2">
                                                         <Icon name="timer" size={12} /> Recalibrando: {formatTime(timeLeft)}
                                                     </p>
-                                                    <button onClick={() => setShowContact(true)} className="text-[9px] text-slate-500 underline uppercase font-black hover:text-slate-300">
+                                                    <button onClick={() => setShowContact(true)} className="text-[9px] text-slate-400 underline uppercase font-black hover:text-slate-200">
                                                         Bypass vía Operador
                                                     </button>
                                                 </div>
@@ -280,36 +261,37 @@
                                         </div>
                                     </div>
                                     {error && (
-                                        <div className="bg-red-950/20 border border-red-900/30 p-4 rounded-2xl">
-                                            <p className="text-red-600 text-[10px] font-bold uppercase text-center leading-tight">{error}</p>
+                                        <div className="bg-red-950/20 border border-red-900/30 p-5 rounded-3xl">
+                                            <p className="text-red-600 text-[10px] font-black uppercase text-center leading-tight mb-2 text-white">ERROR TÉCNICO DE RED</p>
+                                            <p className="text-slate-300 text-[9px] font-bold text-center italic">{error}</p>
                                         </div>
                                     )}
                                 </motion.div>
                             ) : (
                                 <motion.div key="result" initial={{x:30, opacity:0}} animate={{x:0, opacity:1}} className="space-y-6">
-                                    <button onClick={() => setResult(null)} className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 hover:text-white transition-colors tracking-widest mb-4 text-white">
+                                    <button onClick={() => setResult(null)} className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 hover:text-white transition-colors tracking-widest mb-4">
                                         <Icon name="refresh-ccw" size={14} /> Nueva Evaluación
                                     </button>
 
                                     <div className="bg-slate-900 border border-slate-800 p-7 rounded-[2rem] shadow-2xl border-l-4 border-l-red-600">
-                                        <span className="text-[10px] font-black text-red-600 uppercase tracking-widest block mb-3">Intención Real Detectada</span>
+                                        <span className="text-[10px] font-black text-red-600 uppercase tracking-widest block mb-3 text-red-500">Intención Real Detectada</span>
                                         <p className="text-2xl font-black uppercase italic leading-none tracking-tighter text-white">{result.intention}</p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center text-white">
+                                    <div className="grid grid-cols-2 gap-4 text-white font-black">
+                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center">
                                             <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Interés</span>
-                                            <p className="text-4xl font-black text-green-400 leading-none">{result.interest}%</p>
+                                            <p className="text-4xl text-green-400 leading-none">{result.interest}%</p>
                                         </div>
-                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center text-white">
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Riesgo</span>
-                                            <p className={`text-2xl font-black uppercase leading-none ${result.risk === 'Bajo' ? 'text-green-400' : result.risk === 'Medio' ? 'text-yellow-400' : 'text-red-600'}`}>{result.risk}</p>
+                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center">
+                                            <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1 text-slate-400">Riesgo</span>
+                                            <p className={`text-2xl uppercase leading-none ${result.risk === 'Bajo' ? 'text-green-400' : result.risk === 'Medio' ? 'text-yellow-400' : 'text-red-600'}`}>{result.risk}</p>
                                         </div>
                                     </div>
 
                                     <div className="bg-slate-900 p-7 rounded-[2rem] border border-slate-800 shadow-lg text-white">
-                                        <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest block mb-3">Qué hacer ahora</span>
-                                        <p className="font-bold italic text-slate-100 leading-relaxed text-lg">"{result.action}"</p>
+                                        <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest block mb-3 text-yellow-500">Qué hacer ahora</span>
+                                        <p className="font-bold italic leading-relaxed text-lg text-white">"{result.action}"</p>
                                     </div>
 
                                     <div className="bg-red-600/5 border border-red-600/20 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
@@ -326,16 +308,16 @@
                                             }}
                                             className="w-full py-5 bg-red-600 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-red-900/30 flex items-center justify-center gap-3 active:scale-95 transition-all text-white"
                                         >
-                                            <Icon name="copy" size={20} /> Copiar Respuesta
+                                            <Icon name="copy" size={20} /> COPIAR MENSAJE
                                         </button>
                                     </div>
 
                                     <div className="relative h-64 overflow-hidden rounded-[2.5rem] border border-slate-800 flex items-center justify-center text-center p-8 bg-slate-900/20">
-                                        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl z-10 flex flex-col items-center justify-center p-6">
+                                        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl z-10 flex flex-col items-center justify-center p-6 text-white text-white">
                                             <Icon name="lock" className="text-red-600 mb-4 animate-bounce" size={40} />
                                             <h3 className="font-black uppercase tracking-tighter text-xl italic mb-2 text-white">Protocolo de 2º Orden</h3>
                                             <p className="text-[10px] text-slate-500 uppercase font-bold max-w-[200px] mb-8 leading-tight tracking-widest">Análisis automático saturado. Requiere intervención manual.</p>
-                                            <button onClick={handleContact} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-white/5">
+                                            <button onClick={handleContact} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl">
                                                 <Icon name="phone" size={14} /> Contactar Operador H50
                                             </button>
                                         </div>
@@ -345,58 +327,7 @@
                         </AnimatePresence>
                     </main>
 
-                    {/* MODAL DE AJUSTES (API KEY PERSONALIZADA) */}
-                    <AnimatePresence>
-                        {showSettings && (
-                            <motion.div 
-                                initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-                                className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-8"
-                            >
-                                <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 space-y-6 w-full max-w-sm shadow-2xl">
-                                    <div className="text-center">
-                                        <Icon name="settings" size={40} className="text-slate-500 mb-4" />
-                                        <h3 className="text-xl font-black uppercase tracking-tighter text-white">Configuración PRO</h3>
-                                        <p className="text-slate-400 text-[10px] font-bold uppercase mt-2 leading-relaxed">
-                                            Si tienes una clave de API de Gemini (pago o gratuita), introdúcela aquí para evitar los límites de tráfico compartidos.
-                                        </p>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <input 
-                                            type="password"
-                                            placeholder="Introduce tu API Key..."
-                                            value={customKey}
-                                            onChange={(e) => setCustomKey(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-white outline-none"
-                                        />
-                                        <button 
-                                            onClick={() => saveCustomKey(customKey)}
-                                            className="w-full py-4 bg-white text-black rounded-2xl font-black uppercase text-xs tracking-widest"
-                                        >
-                                            Guardar Configuración
-                                        </button>
-                                        <button 
-                                            onClick={() => {
-                                                setCustomKey("");
-                                                localStorage.removeItem('chatops_custom_key');
-                                                setShowSettings(false);
-                                            }}
-                                            className="w-full text-slate-600 text-[9px] font-black uppercase"
-                                        >
-                                            Restablecer valores
-                                        </button>
-                                    </div>
-                                    <button 
-                                        onClick={() => setShowSettings(false)}
-                                        className="text-slate-500 text-[10px] uppercase font-bold block mx-auto pt-4"
-                                    >
-                                        Volver
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* MODAL DE CONTACTO / LÍMITE */}
+                    {/* MODAL LÍMITE */}
                     <AnimatePresence>
                         {showContact && (
                             <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-md flex items-center justify-center p-8">
@@ -405,22 +336,14 @@
                                         <Icon name="shield-alert" size={40} />
                                     </div>
                                     <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none text-white">Límite Alcanzado</h3>
-                                    {timeLeft > 0 ? (
-                                        <p className="text-slate-400 text-xs font-bold uppercase leading-relaxed tracking-widest">
-                                            Sistema en enfriamiento. <br/>Vuelve en <span className="text-white font-black">{formatTime(timeLeft)}</span> o contacta al operador para bypass inmediato.
-                                        </p>
-                                    ) : (
-                                        <p className="text-slate-400 text-xs font-bold uppercase leading-relaxed tracking-widest leading-loose">
-                                            Para situaciones de alta criticidad o urgencia social, contacta directamente con el operador de campo.
-                                        </p>
-                                    )}
+                                    <p className="text-slate-400 text-xs font-bold uppercase leading-relaxed tracking-widest">
+                                        Sistema en enfriamiento táctico. <br/>Vuelve en <span className="text-white font-black">{formatTime(timeLeft)}</span> o contacta al operador para bypass inmediato.
+                                    </p>
                                     <div className="space-y-3 pt-4">
                                         <button onClick={handleContact} className="w-full py-5 bg-red-600 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl active:scale-95 shadow-red-900/40 text-white">Abrir WhatsApp</button>
                                         <button onClick={() => setShowContact(false)} className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mx-auto py-2 text-white">Cerrar</button>
                                     </div>
-                                    <div className="pt-4 opacity-30">
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest tracking-[0.5em]">{BRAND_NAME} STRATEGY</span>
-                                    </div>
+                                    <div className="pt-4 opacity-30 text-[8px] font-black text-slate-500 uppercase tracking-[0.5em]">{BRAND_NAME} STRATEGY</div>
                                 </motion.div>
                             </motion.div>
                         )}
