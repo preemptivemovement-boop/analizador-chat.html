@@ -166,7 +166,9 @@
             };
 
             const handleContact = () => {
-                const msg = `Hola Antonio, solicito un análisis táctico profundo. El sistema automático ChatOps ha agotado su capacidad.`;
+                // He añadido un fragmento del chat para que el consultor tenga contexto inmediato
+                const chatSnippet = chatInput ? `\n\nCaso a analizar:\n"${chatInput.substring(0, 150)}..."` : "";
+                const msg = `Hola Antonio, solicito un análisis táctico profundo. El sistema automático ChatOps ha agotado su capacidad.${chatSnippet}`;
                 window.open(`https://wa.me/34${CONTACT_NUMBER}?text=${encodeURIComponent(msg)}`);
             };
 
@@ -178,7 +180,7 @@
                                 <Icon name="zap" className="text-white fill-current" />
                             </div>
                             <div>
-                                <h1 className="font-black text-2xl tracking-tighter italic uppercase leading-none">ChatOps</h1>
+                                <h1 className="font-black text-2xl tracking-tighter italic uppercase leading-none text-white">ChatOps</h1>
                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{BRAND_NAME}</span>
                             </div>
                         </div>
@@ -261,7 +263,7 @@
                                 </motion.div>
                             ) : (
                                 <motion.div key="result" initial={{x:30, opacity:0}} animate={{x:0, opacity:1}} className="space-y-6">
-                                    <button onClick={() => setResult(null)} className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 hover:text-white transition-colors tracking-widest mb-4">
+                                    <button onClick={() => setResult(null)} className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 hover:text-white transition-colors tracking-widest mb-4 text-white">
                                         <Icon name="refresh-ccw" size={14} /> Nueva Evaluación
                                     </button>
 
@@ -271,11 +273,11 @@
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center">
+                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center text-white">
                                             <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Interés</span>
                                             <p className="text-4xl font-black text-green-400 leading-none">{result.interest}%</p>
                                         </div>
-                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center">
+                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center text-white">
                                             <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Riesgo</span>
                                             <p className={`text-2xl font-black uppercase leading-none ${result.risk === 'Bajo' ? 'text-green-400' : result.risk === 'Medio' ? 'text-yellow-400' : 'text-red-600'}`}>{result.risk}</p>
                                         </div>
@@ -344,7 +346,7 @@
                                     )}
                                     <div className="space-y-3 pt-4">
                                         <button onClick={handleContact} className="w-full py-5 bg-red-600 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl active:scale-95 shadow-red-900/40 text-white">Abrir WhatsApp</button>
-                                        <button onClick={() => setShowContact(false)} className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mx-auto py-2">Cerrar</button>
+                                        <button onClick={() => setShowContact(false)} className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mx-auto py-2 text-white">Cerrar</button>
                                     </div>
                                     <div className="pt-4 opacity-30">
                                         <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest tracking-[0.5em]">{BRAND_NAME} STRATEGY</span>
