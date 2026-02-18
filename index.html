@@ -1,363 +1,459 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatOps • Tactical Intelligence Engine</title>
-    <!-- Dependencias críticas -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        textarea::placeholder { color: #334155; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        input:focus, textarea:focus { border-color: #dc2626 !important; }
-        .btn-glow:active { transform: scale(0.98); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatOps • Preemptive Movement</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#e53e3e;--red-dark:#9b2c2c;
+  --bg:#050810;--bg2:#0d1117;--bg3:#161b27;
+  --border:rgba(255,255,255,0.07);
+  --text:#f0f4ff;--muted:#4a5568;--muted2:#718096;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(229,62,62,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(229,62,62,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* LEGAL */
+#legal-overlay{position:fixed;inset:0;background:rgba(5,8,16,0.98);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.legal-modal{background:var(--bg2);border:1px solid rgba(229,62,62,0.25);border-radius:24px;padding:32px 24px;max-width:420px;width:100%;text-align:center}
+.legal-modal .warn{font-size:40px;display:block;margin-bottom:16px}
+.legal-modal h2{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:8px}
+.age-badge{display:inline-block;background:var(--red);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;padding:3px 14px;border-radius:999px;margin-bottom:18px}
+.legal-text{font-size:11px;color:var(--muted2);line-height:1.8;text-align:left;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:18px}
+.legal-text b{color:#e2e8f0}
+.legal-text p{margin-bottom:8px}
+.legal-text p:last-child{margin-bottom:0}
+.check-row{display:flex;align-items:flex-start;gap:12px;text-align:left;background:rgba(229,62,62,0.05);border:1px solid rgba(229,62,62,0.15);border-radius:12px;padding:14px;margin-bottom:20px}
+.check-row input[type=checkbox]{width:20px;height:20px;min-width:20px;accent-color:var(--red);cursor:pointer;margin-top:1px}
+.check-row label{font-size:11px;color:#cbd5e0;line-height:1.6;cursor:pointer}
+#btn-accept{width:100%;padding:16px;border:none;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;transition:all 0.2s;background:#2d3748;color:#718096;cursor:not-allowed}
+#btn-accept.activo{background:var(--red);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(229,62,62,0.4)}
+#btn-accept.activo:hover{transform:translateY(-2px)}
+
+/* APP */
+.wrap{max-width:480px;margin:0 auto;padding:28px 20px 120px;position:relative;z-index:1}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.logo-area{display:flex;align-items:center;gap:12px}
+.logo-icon{background:var(--red);width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(229,62,62,0.4)}
+.logo-text h1{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;line-height:1;color:#fff}
+.logo-text span{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:3px}
+.status-pill{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:6px 12px}
+.dot{width:6px;height:6px;background:#48bb78;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.status-pill span:last-child{font-size:9px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:2px}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:.9;letter-spacing:1px;margin-bottom:8px}
+.hero-title .accent{color:var(--red)}
+.hero-sub{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:4px;margin-bottom:32px}
+textarea{width:100%;height:220px;background:var(--bg2);border:2px solid rgba(255,255,255,0.06);border-radius:24px;padding:24px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;resize:none;outline:none;transition:border-color 0.2s;margin-bottom:16px}
+textarea::placeholder{color:var(--muted)}
+textarea:focus{border-color:var(--red)}
+.ctx-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.ctx-btn{padding:8px 18px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.ctx-btn:hover{border-color:rgba(255,255,255,0.2);color:#fff}
+.ctx-btn.active{background:#fff;color:#000;border-color:#fff;transform:scale(1.05)}
+.btn-analyze{width:100%;padding:22px;background:var(--red);border:none;border-radius:24px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all 0.2s;border-bottom:4px solid var(--red-dark);box-shadow:0 8px 32px rgba(229,62,62,0.3);margin-bottom:16px}
+.btn-analyze:hover{transform:translateY(-2px)}
+.btn-analyze:active{transform:translateY(2px);border-bottom-width:0}
+.credits-box{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
+.credit-num{color:var(--red);font-size:14px}
+.section{display:none}
+.section.visible{display:block}
+#loader-section{text-align:center;padding:60px 0}
+.spinner{width:80px;height:80px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader-section p{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:3px;animation:blink 1.2s steps(1) infinite}
+@keyframes blink{50%{opacity:.3}}
+.back-btn{display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:3px;cursor:pointer;margin-bottom:24px;transition:color 0.2s;font-family:'DM Sans',sans-serif}
+.back-btn:hover{color:#fff}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:28px;margin-bottom:16px}
+.card-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:3px;margin-bottom:10px;display:block}
+.lbl-red{color:var(--red)}.lbl-yellow{color:#f6c90e}.lbl-blue{color:#63b3ed}
+.intention-text{font-family:'Bebas Neue',sans-serif;font-size:32px;line-height:1;letter-spacing:1px}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:24px;text-align:center}
+.metric-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;display:block}
+.metric-value{font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1}
+.col-green{color:#68d391}.col-yellow{color:#f6c90e}.col-red{color:var(--red)}
+.action-text{font-style:italic;font-size:16px;line-height:1.6;color:#e2e8f0}
+.msg-box{background:rgba(229,62,62,0.04);border:1px solid rgba(229,62,62,0.15);border-radius:24px;padding:28px;margin-bottom:16px}
+.msg-content{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:14px;padding:20px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;color:#e2e8f0;margin-bottom:16px;user-select:all}
+.btn-copy{width:100%;padding:18px;background:var(--red);border:none;border-radius:16px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;box-shadow:0 4px 20px rgba(229,62,62,0.3)}
+.btn-copy:hover{transform:translateY(-1px)}
+.upgrade-card{background:linear-gradient(135deg,rgba(229,62,62,0.08),rgba(229,62,62,0.02));border:1px solid rgba(229,62,62,0.2);border-radius:28px;padding:36px 28px;text-align:center;margin-bottom:16px}
+.upgrade-card h3{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;margin-bottom:10px}
+.upgrade-card p{font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:20px;max-width:280px;margin-left:auto;margin-right:auto}
+.features{list-style:none;text-align:left;margin-bottom:24px;display:flex;flex-direction:column;gap:10px}
+.features li{font-size:12px;color:#cbd5e0;display:flex;align-items:center;gap:10px}
+.features li::before{content:'→';color:var(--red);font-weight:700}
+.btn-cta{width:100%;padding:16px;border:none;border-radius:14px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;margin-bottom:10px}
+.btn-cta:last-child{margin-bottom:0}
+.btn-cta:hover{transform:translateY(-1px)}
+.cta-white{background:#fff;color:#000;box-shadow:0 4px 20px rgba(255,255,255,0.1)}
+.cta-dark{background:#1a1a2e;color:#fff;border:1px solid rgba(255,255,255,0.15)}
+.cooldown-card{background:var(--bg2);border:1px solid var(--border);border-radius:28px;padding:40px 28px;text-align:center;margin-bottom:16px}
+.cooldown-card h3{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:12px}
+.cooldown-card p{font-size:12px;color:var(--muted2);line-height:1.7;margin-bottom:16px}
+.timer{font-family:'JetBrains Mono',monospace;font-size:36px;color:var(--red);margin:0 0 24px;letter-spacing:4px}
+footer{position:fixed;bottom:0;left:0;width:100%;padding:14px;text-align:center;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:3px;background:rgba(5,8,16,0.95);border-top:1px solid var(--border);backdrop-filter:blur(8px);z-index:100}
+</style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        
-        // Integración de Framer Motion vía CDN
-        const { motion, AnimatePresence } = window.Motion || { 
-            motion: { div: 'div', section: 'section', header: 'header', main: 'main', button: 'button', p: 'p', h2: 'h2', span: 'span', i: 'i' }, 
-            AnimatePresence: ({children}) => children 
-        };
+<!-- ===== AVISO LEGAL ===== -->
+<div id="legal-overlay">
+  <div class="legal-modal">
+    <span class="warn">⚠️</span>
+    <h2>Aviso Legal</h2>
+    <span class="age-badge">+18 AÑOS</span>
+    <div class="legal-text">
+      <p><b>Esta herramienta es una guía orientativa de comunicación personal</b> creada por Antonio (Preemptive Movement). No sustituye en ningún caso el consejo de un profesional de la salud mental, psicólogo, psiquiatra, médico o cualquier otro especialista.</p>
+      <p>El autor <b>no es médico, psicólogo, terapeuta ni profesional sanitario</b>. Los análisis son de carácter orientativo y no constituyen diagnóstico, tratamiento ni prescripción de ningún tipo.</p>
+      <p>Si estás atravesando una situación de crisis emocional o problema de salud mental, <b>consulta con un profesional cualificado</b>.</p>
+      <p>El uso está reservado a personas <b>mayores de 18 años</b>.</p>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="legal-check">
+      <label for="legal-check">He leído y acepto el aviso legal. Confirmo que tengo 18 años o más y entiendo que esto no es asesoramiento médico ni psicológico.</label>
+    </div>
+    <button id="btn-accept">ENTRAR →</button>
+  </div>
+</div>
 
-        // --- CONFIGURACIÓN ESTRATÉGICA ---
-        // Clave actualizada por el usuario
-        const apiKey = "AIzaSyBdnRUoqB2sRshy750f0aMqIQSVc5O16vU"; 
-        const MODEL_ID = "gemini-2.5-flash-preview-09-2025";
-        const COOLDOWN_TIME = 60 * 60 * 1000; // 1 Hora
-        const CONTACT_NUMBER = "672680535";
-        const BRAND_NAME = "Preemptive Movement";
+<!-- ===== APP ===== -->
+<div class="wrap">
+  <header>
+    <div class="logo-area">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">
+        <h1>ChatOps</h1>
+        <span>Preemptive Movement</span>
+      </div>
+    </div>
+    <div class="status-pill">
+      <div class="dot"></div>
+      <span>Online</span>
+    </div>
+  </header>
 
-        // Componente de Iconos Lucide
-        const Icon = ({ name, size = 20, className = "" }) => {
-            return <i data-lucide={name} className={className} style={{ width: size, height: size, display: 'inline-flex' }}></i>;
-        };
+  <!-- INPUT -->
+  <div id="input-section" class="section visible">
+    <h2 class="hero-title">Descifra la <span class="accent">intención.</span></h2>
+    <p class="hero-sub">Diagnóstico táctico de conversaciones</p>
+    <textarea id="chat-input" placeholder="Pega aquí el hilo de mensajes que quieres analizar..."></textarea>
+    <div class="ctx-row" id="ctx-row">
+      <button class="ctx-btn active" data-ctx="pareja">Pareja</button>
+      <button class="ctx-btn" data-ctx="cita">Cita</button>
+      <button class="ctx-btn" data-ctx="trabajo">Trabajo</button>
+      <button class="ctx-btn" data-ctx="negociacion">Negociación</button>
+    </div>
+    <button class="btn-analyze" id="btn-analyze">⚡ ANALIZAR</button>
+    <div class="credits-box">
+      Análisis gratuitos disponibles: <span class="credit-num" id="credit-display">2</span> de 2
+    </div>
+  </div>
 
-        const App = () => {
-            const [chatInput, setChatInput] = useState('');
-            const [context, setContext] = useState('cita');
-            const [isAnalyzing, setIsAnalyzing] = useState(false);
-            const [result, setResult] = useState(null);
-            const [freeUses, setFreeUses] = useState(3);
-            const [lastUseTimestamp, setLastUseTimestamp] = useState(null);
-            const [timeLeft, setTimeLeft] = useState(0);
-            const [showContact, setShowContact] = useState(false);
-            const [error, setError] = useState(null);
+  <!-- LOADER -->
+  <div id="loader-section" class="section">
+    <div class="spinner"></div>
+    <p>Procesando señales...</p>
+  </div>
 
-            // Carga de estado inicial
-            useEffect(() => {
-                const savedCredits = localStorage.getItem('chatops_v8_credits');
-                const savedTime = localStorage.getItem('chatops_v8_time');
-                
-                if (savedCredits !== null) {
-                    setFreeUses(parseInt(savedCredits));
-                }
-                if (savedTime !== null) {
-                    const ts = parseInt(savedTime);
-                    setLastUseTimestamp(ts);
-                    const now = Date.now();
-                    if (now > ts + COOLDOWN_TIME) {
-                        setFreeUses(3);
-                        localStorage.setItem('chatops_v8_credits', "3");
-                    }
-                }
-                
-                if (window.lucide) window.lucide.createIcons();
-            }, []);
+  <!-- RESULTADO -->
+  <div id="result-section" class="section">
+    <button class="back-btn" id="btn-back">← Nueva evaluación</button>
+    <div class="card" style="border-left:3px solid var(--red)">
+      <span class="card-label lbl-red">⬤ Intención detectada</span>
+      <div class="intention-text" id="res-intention">–</div>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-label">Interés</span>
+        <div class="metric-value col-green" id="res-interest">–</div>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Riesgo</span>
+        <div class="metric-value" id="res-risk">–</div>
+      </div>
+    </div>
+    <div class="card">
+      <span class="card-label lbl-yellow">◆ Qué hacer ahora</span>
+      <p class="action-text" id="res-action">–</p>
+    </div>
+    <div class="msg-box">
+      <span class="card-label lbl-blue">✦ Respuesta recomendada</span>
+      <div class="msg-content" id="res-msg">–</div>
+      <button class="btn-copy" id="btn-copy">📋 COPIAR RESPUESTA</button>
+    </div>
+    <div class="upgrade-card">
+      <span style="font-size:36px;display:block;margin-bottom:16px">🔐</span>
+      <h3>¿Quieres resultados reales?</h3>
+      <p>Este análisis es una muestra de lo que hacemos con personas reales. Con asesoría 1:1 trabajamos tu caso con estrategia personalizada.</p>
+      <ul class="features">
+        <li>Análisis ilimitados y personalizados</li>
+        <li>Estrategia de conversación diseñada para ti</li>
+        <li>Sesiones 1:1 con Antonio</li>
+        <li>Acceso a recursos exclusivos</li>
+      </ul>
+      <button class="btn-cta cta-white" id="cta-wa1">📲 WhatsApp · 672 680 535</button>
+      <button class="btn-cta cta-dark" id="cta-mail1">✉️ preemptivemovement@gmail.com</button>
+      <button class="btn-cta cta-dark" id="cta-blog1">🌐 preemptivemovement.blogspot.com</button>
+    </div>
+  </div>
 
-            useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [result, isAnalyzing, showContact, timeLeft, error]);
+  <!-- COOLDOWN -->
+  <div id="cooldown-section" class="section">
+    <div class="cooldown-card">
+      <span style="font-size:48px;display:block;margin-bottom:16px">⏱</span>
+      <h3>Límite alcanzado</h3>
+      <p>Has agotado los 2 análisis gratuitos. El sistema se recargará en:</p>
+      <div class="timer" id="timer-display">60:00</div>
+      <p>O contacta directamente con Antonio para análisis ilimitados y asesoría personalizada.</p>
+    </div>
+    <div class="upgrade-card">
+      <button class="btn-cta cta-white" id="cta-wa2">📲 WhatsApp · 672 680 535</button>
+      <button class="btn-cta cta-dark" id="cta-mail2">✉️ preemptivemovement@gmail.com</button>
+      <button class="btn-cta cta-dark" id="cta-blog2">🌐 preemptivemovement.blogspot.com</button>
+    </div>
+  </div>
+</div>
 
-            // Lógica del Temporizador
-            useEffect(() => {
-                let interval;
-                if (freeUses <= 0 && lastUseTimestamp) {
-                    interval = setInterval(() => {
-                        const now = Date.now();
-                        const diff = (lastUseTimestamp + COOLDOWN_TIME) - now;
-                        if (diff <= 0) {
-                            setFreeUses(3);
-                            setTimeLeft(0);
-                            localStorage.setItem('chatops_v8_credits', "3");
-                            clearInterval(interval);
-                        } else {
-                            setTimeLeft(diff);
-                        }
-                    }, 1000);
-                }
-                return () => clearInterval(interval);
-            }, [freeUses, lastUseTimestamp]);
+<footer>Preemptive Movement · Sin conexión a servidores · Datos 100% privados</footer>
 
-            const fetchAI = async (text, ctx) => {
-                const systemPrompt = `Eres un Motor de Decisión Social Senior de ${BRAND_NAME}. Analiza chats y da diagnósticos tácticos fríos y asertivos. PROHIBIDO usar lenguaje vago o terapéutico. Contexto: ${ctx}. Salida JSON: { "intention": "...", "interest": 0-100, "risk": "Bajo/Medio/Alto", "action": "...", "recommendedMsg": "..." }`;
-                
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`;
-                
-                try {
-                    const response = await fetch(url, { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: `Analiza: "${text}"` }] }],
-                            systemInstruction: { parts: [{ text: systemPrompt }] },
-                            generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
-                        })
-                    });
+<script>
+(function() {
 
-                    if (response.status === 429) {
-                        throw new Error("SISTEMA SATURADO: Google ha limitado temporalmente el tráfico. Esto sucede cuando la cuota de la clave API es excedida.");
-                    }
-                    
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.error?.message || "Error en la conexión con el motor táctico.");
-                    }
+// ===== LEGAL =====
+var overlay = document.getElementById('legal-overlay');
+var cbLegal = document.getElementById('legal-check');
+var btnAccept = document.getElementById('btn-accept');
 
-                    const data = await response.json();
-                    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    return JSON.parse(content);
-                } catch (e) {
-                    throw e;
-                }
-            };
+cbLegal.addEventListener('change', function() {
+  if (this.checked) {
+    btnAccept.classList.add('activo');
+  } else {
+    btnAccept.classList.remove('activo');
+  }
+});
 
-            const handleAnalyze = async () => {
-                if (chatInput.trim().length < 10) return;
-                
-                if (freeUses <= 0 && timeLeft > 0) {
-                    setShowContact(true);
-                    return;
-                }
-                
-                setIsAnalyzing(true);
-                setError(null);
+btnAccept.addEventListener('click', function() {
+  if (!cbLegal.checked) {
+    alert('Marca la casilla para confirmar que aceptas el aviso legal.');
+    return;
+  }
+  overlay.style.display = 'none';
+});
 
-                try {
-                    const diagnosis = await fetchAI(chatInput, context);
-                    setResult(diagnosis);
-                    
-                    const newUses = freeUses - 1;
-                    setFreeUses(newUses);
-                    
-                    if (newUses === 0) {
-                        const now = Date.now();
-                        setLastUseTimestamp(now);
-                        localStorage.setItem('chatops_v8_time', now.toString());
-                    }
-                    localStorage.setItem('chatops_v8_credits', newUses.toString());
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } catch (e) {
-                    setError(e.message);
-                } finally {
-                    setIsAnalyzing(false);
-                }
-            };
+// ===== RESPUESTAS =====
+var RESPONSES = {
+  pareja: [
+    { intention: "Busca atención y validación emocional", interest: 78, risk: "Medio", riskCol: "col-yellow",
+      action: "Mantén la calma y no reacciones de inmediato. Esta persona responde al estado emocional que proyectas, no a tus palabras.",
+      msg: "Entiendo lo que me dices. Necesito algo de tiempo para procesar esto y darte la respuesta que merece." },
+    { intention: "Pone a prueba tu reacción antes de comprometerse", interest: 85, risk: "Bajo", riskCol: "col-green",
+      action: "No demuestres ansiedad. La persona observa si mantienes el frame. Responde desde la seguridad, no desde la necesidad.",
+      msg: "Me alegra que lo digas. Cuando quieras quedar y hablar tranquilamente, dímelo." }
+  ],
+  cita: [
+    { intention: "Interés real pero inseguridad para dar el siguiente paso", interest: 72, risk: "Bajo", riskCol: "col-green",
+      action: "Propón un plan concreto, no una invitación abierta. La ambigüedad mata el interés. Sé específico con día, hora y lugar.",
+      msg: "Este sábado a las 8. ¿Te viene bien o prefieres el domingo?" },
+    { intention: "Mantiene opciones abiertas, tú eres la opción B", interest: 51, risk: "Medio", riskCol: "col-yellow",
+      action: "Reduce tu disponibilidad. Si siempre estás accesible, no generas deseo. Hazte escaso estratégicamente esta semana.",
+      msg: "Esta semana tengo agenda apretada. La próxima podemos cuadrar algo." }
+  ],
+  trabajo: [
+    { intention: "Busca establecer jerarquía desde el inicio", interest: 60, risk: "Medio", riskCol: "col-yellow",
+      action: "No cedas terreno en la primera interacción. El tono que establezcas ahora determinará toda la relación laboral futura.",
+      msg: "Perfecto, lo reviso y te doy feedback antes del viernes. ¿Te parece bien así?" },
+    { intention: "Reconocimiento indirecto de tu valor", interest: 80, risk: "Bajo", riskCol: "col-green",
+      action: "Este es el momento para negociar. No lo dejes pasar. El apalancamiento ahora lo tienes tú.",
+      msg: "Me alegra que lo values. Justo quería hablar contigo sobre mis condiciones esta semana." }
+  ],
+  negociacion: [
+    { intention: "Técnica de presión por urgencia artificial", interest: 65, risk: "Medio", riskCol: "col-yellow",
+      action: "No te dejes llevar por la urgencia que imponen. Quien necesita cerrar rápido tiene menos poder del que aparenta.",
+      msg: "Entiendo la urgencia de tu parte. Yo necesito 48h más para revisar los términos con calma." },
+    { intention: "Posición de entrada, esperan ser rebatidos", interest: 75, risk: "Bajo", riskCol: "col-green",
+      action: "Esta es solo su primera oferta. Si aceptas ahora, dejas dinero sobre la mesa. Contraofer con seguridad.",
+      msg: "Aprecio la propuesta. Mi posición es diferente. Estoy seguro de que podemos encontrar un punto común." }
+  ]
+};
 
-            const formatTime = (ms) => {
-                const min = Math.floor(ms / 60000);
-                const sec = Math.floor((ms % 60000) / 1000);
-                return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-            };
+// ===== ESTADO =====
+var COOLDOWN = 60 * 60 * 1000;
+var CREDITS_KEY = 'pm_v3_credits';
+var TIME_KEY = 'pm_v3_time';
+var MAX = 2;
+var credits = MAX;
+var cooldownEnd = null;
+var selectedCtx = 'pareja';
+var timerInterval = null;
+var ridx = { pareja:0, cita:0, trabajo:0, negociacion:0 };
 
-            const handleContact = () => {
-                const snippet = chatInput ? `\n\nCaso:\n"${chatInput.substring(0, 150)}..."` : "";
-                const msg = `Hola Antonio, solicito un análisis táctico profundo. El sistema automático ha alcanzado su capacidad.${snippet}`;
-                window.open(`https://wa.me/34${CONTACT_NUMBER}?text=${encodeURIComponent(msg)}`);
-            };
+function loadState() {
+  var savedTime = localStorage.getItem(TIME_KEY);
+  var savedC = localStorage.getItem(CREDITS_KEY);
+  if (savedTime) {
+    var end = parseInt(savedTime, 10);
+    if (Date.now() < end) {
+      cooldownEnd = end; credits = 0;
+    } else {
+      credits = MAX;
+      localStorage.removeItem(TIME_KEY);
+      localStorage.setItem(CREDITS_KEY, String(MAX));
+    }
+  } else if (savedC !== null) {
+    credits = parseInt(savedC, 10);
+    if (isNaN(credits) || credits < 0) credits = MAX;
+  }
+  updateCreditDisplay();
+}
 
-            return (
-                <div className="min-h-screen p-6 max-w-md mx-auto pb-32">
-                    <header className="flex justify-between items-center mb-10 pb-6 border-b border-slate-800">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-red-600 p-2 rounded-xl shadow-lg shadow-red-900/30">
-                                <Icon name="zap" className="text-white fill-current" />
-                            </div>
-                            <div>
-                                <h1 className="font-black text-2xl tracking-tighter italic uppercase leading-none text-white text-white">ChatOps</h1>
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{BRAND_NAME}</span>
-                            </div>
-                        </div>
-                        <div className="bg-slate-900 px-3 py-1 rounded-full border border-slate-800 flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-white">System Active</span>
-                        </div>
-                    </header>
+function updateCreditDisplay() {
+  document.getElementById('credit-display').textContent = credits;
+}
 
-                    <main>
-                        <AnimatePresence mode="wait">
-                            {!result ? (
-                                <motion.div key="input" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="space-y-8">
-                                    <div className="space-y-2">
-                                        <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none text-white">Descifra la intención.</h2>
-                                        <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.2em]">Diagnóstico social sin filtros.</p>
-                                    </div>
+function saveCredits() {
+  localStorage.setItem(CREDITS_KEY, String(credits));
+}
 
-                                    <div className="relative">
-                                        <textarea 
-                                            value={chatInput}
-                                            onChange={(e) => setChatInput(e.target.value)}
-                                            placeholder="Pega el hilo de mensajes aquí..."
-                                            className="w-full h-80 bg-slate-900 border-2 border-slate-800 rounded-[2.5rem] p-7 text-slate-200 focus:border-red-600 outline-none transition-all resize-none shadow-2xl font-mono text-sm shadow-black/50"
-                                        />
-                                    </div>
+// ===== VISTA =====
+var sections = ['input-section','loader-section','result-section','cooldown-section'];
+function showSection(id) {
+  sections.forEach(function(s) {
+    var el = document.getElementById(s);
+    el.className = s === id ? 'section visible' : 'section';
+  });
+  updateCreditDisplay();
+}
 
-                                    <div className="space-y-4">
-                                        <div className="flex flex-wrap gap-2">
-                                            {['pareja', 'cita', 'trabajo', 'negociación'].map(c => (
-                                                <button 
-                                                    key={c} 
-                                                    onClick={() => setContext(c)}
-                                                    className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${context === c ? 'bg-white text-black border-white shadow-xl shadow-white/5' : 'border-slate-800 text-slate-500 hover:border-slate-600'}`}
-                                                >
-                                                    {c}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
+// Contexto
+document.getElementById('ctx-row').addEventListener('click', function(e) {
+  var btn = e.target.closest('.ctx-btn');
+  if (!btn) return;
+  document.querySelectorAll('.ctx-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  selectedCtx = btn.dataset.ctx;
+});
 
-                                    <div className="space-y-4 pt-2">
-                                        <button 
-                                            onClick={handleAnalyze}
-                                            disabled={isAnalyzing || chatInput.length < 10 || (freeUses <= 0 && timeLeft > 0)}
-                                            className={`w-full py-6 rounded-[2.5rem] font-black text-xl uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all shadow-2xl relative overflow-hidden ${isAnalyzing || (freeUses <= 0 && timeLeft > 0) ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700' : 'bg-red-600 text-white active:scale-95 shadow-red-900/40 border-b-4 border-red-800 active:border-b-0'}`}
-                                        >
-                                            {isAnalyzing ? (
-                                                <><Icon name="refresh-ccw" className="animate-spin" size={24} /> PROCESANDO...</>
-                                            ) : (
-                                                <><Icon name="zap" size={24} /> ANALIZAR</>
-                                            )}
-                                        </button>
+// ===== ANÁLISIS =====
+function getResponse(ctx) {
+  var pool = RESPONSES[ctx] || RESPONSES.cita;
+  var idx = ridx[ctx] % pool.length;
+  ridx[ctx]++;
+  return pool[idx];
+}
 
-                                        <div className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-900 text-center shadow-inner">
-                                            {freeUses > 0 ? (
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
-                                                    Análisis disponibles: <span className="text-red-500 font-black">{freeUses}</span>
-                                                </p>
-                                            ) : timeLeft > 0 ? (
-                                                <div className="flex flex-col items-center gap-1.5">
-                                                    <p className="text-[10px] font-black text-yellow-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                        <Icon name="timer" size={12} /> Recalibrando: {formatTime(timeLeft)}
-                                                    </p>
-                                                    <button onClick={() => setShowContact(true)} className="text-[9px] text-slate-400 underline uppercase font-black hover:text-slate-200">
-                                                        Bypass vía Operador
-                                                    </button>
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                    {error && (
-                                        <div className="bg-red-950/20 border border-red-900/30 p-5 rounded-3xl">
-                                            <p className="text-red-600 text-[10px] font-black uppercase text-center leading-tight mb-2 text-white">ERROR TÉCNICO DE RED</p>
-                                            <p className="text-slate-300 text-[9px] font-bold text-center italic">{error}</p>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            ) : (
-                                <motion.div key="result" initial={{x:30, opacity:0}} animate={{x:0, opacity:1}} className="space-y-6">
-                                    <button onClick={() => setResult(null)} className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 hover:text-white transition-colors tracking-widest mb-4">
-                                        <Icon name="refresh-ccw" size={14} /> Nueva Evaluación
-                                    </button>
+document.getElementById('btn-analyze').addEventListener('click', function() {
+  var input = document.getElementById('chat-input').value.trim();
+  if (input.length < 10) {
+    alert('Escribe al menos 10 caracteres para analizar.');
+    return;
+  }
+  if (credits <= 0) {
+    if (cooldownEnd && Date.now() < cooldownEnd) {
+      showSection('cooldown-section');
+      startTimer();
+      return;
+    } else {
+      credits = MAX; cooldownEnd = null;
+      localStorage.removeItem(TIME_KEY);
+      saveCredits();
+    }
+  }
+  showSection('loader-section');
+  var delay = 1400 + Math.random() * 800;
+  setTimeout(function() {
+    var d = getResponse(selectedCtx);
+    document.getElementById('res-intention').textContent = d.intention;
+    document.getElementById('res-interest').textContent = d.interest + '%';
+    var rEl = document.getElementById('res-risk');
+    rEl.textContent = d.risk;
+    rEl.className = 'metric-value ' + d.riskCol;
+    document.getElementById('res-action').textContent = '"' + d.action + '"';
+    document.getElementById('res-msg').textContent = d.msg;
+    credits--;
+    saveCredits();
+    if (credits <= 0) {
+      var end = Date.now() + COOLDOWN;
+      cooldownEnd = end;
+      localStorage.setItem(TIME_KEY, String(end));
+    }
+    showSection('result-section');
+  }, delay);
+});
 
-                                    <div className="bg-slate-900 border border-slate-800 p-7 rounded-[2rem] shadow-2xl border-l-4 border-l-red-600">
-                                        <span className="text-[10px] font-black text-red-600 uppercase tracking-widest block mb-3 text-red-500">Intención Real Detectada</span>
-                                        <p className="text-2xl font-black uppercase italic leading-none tracking-tighter text-white">{result.intention}</p>
-                                    </div>
+// Volver
+document.getElementById('btn-back').addEventListener('click', function() {
+  showSection('input-section');
+});
 
-                                    <div className="grid grid-cols-2 gap-4 text-white font-black">
-                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center">
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Interés</span>
-                                            <p className="text-4xl text-green-400 leading-none">{result.interest}%</p>
-                                        </div>
-                                        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 text-center">
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1 text-slate-400">Riesgo</span>
-                                            <p className={`text-2xl uppercase leading-none ${result.risk === 'Bajo' ? 'text-green-400' : result.risk === 'Medio' ? 'text-yellow-400' : 'text-red-600'}`}>{result.risk}</p>
-                                        </div>
-                                    </div>
+// Copiar
+document.getElementById('btn-copy').addEventListener('click', function() {
+  var msg = document.getElementById('res-msg').textContent;
+  var ta = document.createElement('textarea');
+  ta.value = msg;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  var btn = this;
+  var orig = btn.innerHTML;
+  btn.innerHTML = '✅ COPIADO';
+  setTimeout(function(){ btn.innerHTML = orig; }, 2000);
+});
 
-                                    <div className="bg-slate-900 p-7 rounded-[2rem] border border-slate-800 shadow-lg text-white">
-                                        <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest block mb-3 text-yellow-500">Qué hacer ahora</span>
-                                        <p className="font-bold italic leading-relaxed text-lg text-white">"{result.action}"</p>
-                                    </div>
+// CTA Links
+var links = {
+  'cta-wa1':'https://wa.me/34672680535?text=Hola%20Antonio%2C%20he%20probado%20ChatOps%20y%20quiero%20saber%20más',
+  'cta-wa2':'https://wa.me/34672680535?text=Hola%20Antonio%2C%20he%20probado%20ChatOps%20y%20quiero%20saber%20más',
+  'cta-mail1':'mailto:preemptivemovement@gmail.com?subject=Asesoría%20ChatOps',
+  'cta-mail2':'mailto:preemptivemovement@gmail.com?subject=Asesoría%20ChatOps',
+  'cta-blog1':'https://preemptivemovement.blogspot.com',
+  'cta-blog2':'https://preemptivemovement.blogspot.com'
+};
+Object.keys(links).forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('click', function(){ window.open(links[id]); });
+});
 
-                                    <div className="bg-red-600/5 border border-red-600/20 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                                        <span className="text-[10px] font-black text-red-500 uppercase block mb-5 tracking-widest">Respuesta Recomendada</span>
-                                        <div className="bg-slate-950/90 p-6 rounded-2xl border border-slate-800 font-mono text-sm mb-6 shadow-inner leading-relaxed select-all text-slate-100">
-                                            {result.recommendedMsg}
-                                        </div>
-                                        <button 
-                                            onClick={() => {
-                                                const el = document.createElement('textarea');
-                                                el.value = result.recommendedMsg;
-                                                document.body.appendChild(el); el.select();
-                                                document.execCommand('copy'); document.body.removeChild(el);
-                                            }}
-                                            className="w-full py-5 bg-red-600 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-red-900/30 flex items-center justify-center gap-3 active:scale-95 transition-all text-white"
-                                        >
-                                            <Icon name="copy" size={20} /> COPIAR MENSAJE
-                                        </button>
-                                    </div>
+// ===== TIMER =====
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  updateTimer();
+  timerInterval = setInterval(function() {
+    if (!cooldownEnd || Date.now() >= cooldownEnd) {
+      clearInterval(timerInterval);
+      credits = MAX; cooldownEnd = null;
+      localStorage.removeItem(TIME_KEY);
+      saveCredits();
+      showSection('input-section');
+    } else {
+      updateTimer();
+    }
+  }, 1000);
+}
 
-                                    <div className="relative h-64 overflow-hidden rounded-[2.5rem] border border-slate-800 flex items-center justify-center text-center p-8 bg-slate-900/20">
-                                        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl z-10 flex flex-col items-center justify-center p-6 text-white text-white">
-                                            <Icon name="lock" className="text-red-600 mb-4 animate-bounce" size={40} />
-                                            <h3 className="font-black uppercase tracking-tighter text-xl italic mb-2 text-white">Protocolo de 2º Orden</h3>
-                                            <p className="text-[10px] text-slate-500 uppercase font-bold max-w-[200px] mb-8 leading-tight tracking-widest">Análisis automático saturado. Requiere intervención manual.</p>
-                                            <button onClick={handleContact} className="w-full py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl">
-                                                <Icon name="phone" size={14} /> Contactar Operador H50
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </main>
+function updateTimer() {
+  var rem = cooldownEnd ? Math.max(0, cooldownEnd - Date.now()) : 0;
+  var m = Math.floor(rem / 60000);
+  var s = Math.floor((rem % 60000) / 1000);
+  var el = document.getElementById('timer-display');
+  if (el) el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+}
 
-                    {/* MODAL LÍMITE */}
-                    <AnimatePresence>
-                        {showContact && (
-                            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-md flex items-center justify-center p-8">
-                                <motion.div initial={{y:50}} animate={{y:0}} className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 space-y-8 w-full max-w-sm text-center shadow-2xl relative overflow-hidden">
-                                    <div className="bg-red-600/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-red-600/20 text-red-600">
-                                        <Icon name="shield-alert" size={40} />
-                                    </div>
-                                    <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none text-white">Límite Alcanzado</h3>
-                                    <p className="text-slate-400 text-xs font-bold uppercase leading-relaxed tracking-widest">
-                                        Sistema en enfriamiento táctico. <br/>Vuelve en <span className="text-white font-black">{formatTime(timeLeft)}</span> o contacta al operador para bypass inmediato.
-                                    </p>
-                                    <div className="space-y-3 pt-4">
-                                        <button onClick={handleContact} className="w-full py-5 bg-red-600 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl active:scale-95 shadow-red-900/40 text-white">Abrir WhatsApp</button>
-                                        <button onClick={() => setShowContact(false)} className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mx-auto py-2 text-white">Cerrar</button>
-                                    </div>
-                                    <div className="pt-4 opacity-30 text-[8px] font-black text-slate-500 uppercase tracking-[0.5em]">{BRAND_NAME} STRATEGY</div>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+// ===== INIT =====
+loadState();
+if (credits <= 0 && cooldownEnd && Date.now() < cooldownEnd) {
+  showSection('cooldown-section');
+  startTimer();
+}
 
-                    <footer className="fixed bottom-0 left-0 w-full p-6 text-center text-[9px] font-black text-slate-700 uppercase tracking-[0.5em] z-40 bg-slate-950/90 border-t border-slate-900 backdrop-blur-md">
-                        Data Link Secure • No Logs Stored
-                    </footer>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+})();
+</script>
 </body>
 </html>
